@@ -1,0 +1,221 @@
+---
+title: "Programmation Codage"
+author: "Chenyin WU et Yuchen ZHU"
+date: "2021/3/23"
+output: html_document
+---
+
+library(reticulate)
+
+```{python}
+
+##Part 1
+import pandas as pd                                         ## importer des packeages que nous avons besoin
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
+from pandas import Series, DataFrame
+import xlrd
+from datetime import date,datetime
+import re
+import pymysql
+import xlwt
+import importlib,sys
+importlib.reload(sys)
+
+data = pd.read_excel('D:/M1/Car Data.xlsx')                 ## importer la base de données en format Excel que
+                                                            ## nous allons traiter
+
+data.shape                                                  ## voir en sommaire cette base de données
+data.dtypes
+data.columns
+data.head(5)
+
+data.isnull() 
+data = data.dropna(how='any')                               ## supprimer tous les enregistrements ayant des
+data.shape                                                  ## cellules nulles
+
+d1=data.rename(columns={'汽车款式': 'Modèle de voiture',                      ## traduire l'en-tête de colonne 
+                        '汽车售价/万': 'Prix de voiture（0000RMB)',           ## en français 
+                        '汽车原价/万': 'Prix original（0000RMB)',
+                        '驾驶行程/万公里': 'Voyage de conduite（0000KM)',                                                              '保险到期': 'Date d’expiration des assurances',
+                        '上牌时间': 'Date d’avoir la plaque d’immatriculation',
+                        '排量/L': 'Déplacement de voiture',
+                        '马力': 'Puissance',
+                        '车身级别': 'Taille de voiture',
+                        '颜色': 'Couleur',
+                        '燃油标号': 'Numéro de carburant',
+                        '汽车所在地': 'Emplacement de voiture',
+                        '差价': 'Écart des prix',
+                        '售/原': 'Prix/Prix original',
+                        '汽车详情': 'Détails de voiture',})
+d1.columns
+                     
+d2=d1.sort_values(by=['Prix de voiture（0000RMB)'])                           ## trier en fonction du prix
+                                                                              ## (De bas à élevé)
+
+i=np.arange(1,len(d2)+1)                                                      ## ajouter une nouvelle colonne
+d2.insert(0, 'ID', i, allow_duplicates=False)                                 ## qui contient le ID pour chaque
+d2.head(5)                                                                    ## voiture
+
+d2.loc[(d2['Prix de voiture（0000RMB)'] > 50), 'Niveau']= 'A'                 ## distribuer un niveau pour
+d2.loc[(d2['Prix de voiture（0000RMB)'] <= 50), 'Niveau']= 'B'                ## chaque voiture en fonction de
+d2.loc[(d2['Prix de voiture（0000RMB)'] <= 25), 'Niveau']= 'C'                ## prix
+d2.loc[(d2['Prix de voiture（0000RMB)'] <= 12.5), 'Niveau']= 'D'
+d2.loc[(d2['Prix de voiture（0000RMB)'] <= 6.25), 'Niveau']= 'E'
+d2.head(5)
+d2.tail(5)
+
+d3=pd.DataFrame((x.split('式') for x in d2['Modèle de voiture']),             ## séparer le modèle de voiture
+              index=d2.index,columns=['Voiture','Modèle en détails','1'])     ## en deux colonne, nommé
+d3=d3.drop(['1'],axis=1)                                                      ## 'Voiture', 'Modèle en détails'
+d2.insert(1, 'Voiture', d3['Voiture'], allow_duplicates=False)
+d2.insert(2, 'Modèle en détails', d3['Modèle en détails'], allow_duplicates=False)
+d3=d2.drop(['Modèle de voiture'],axis=1)
+d3.shape
+d3.dtypes
+d3.columns
+d3.head(5)
+
+writer = pd.ExcelWriter("D:\M1\Patent Data\吴辰寅最终导出Excel.xls")          ## sauvegarder cette base de
+d3.to_excel(writer, columns=['ID','Voiture',                                  ## données traités sous un
+                             'Modèle en détails',                             ## nouveau Excel
+                             'Prix de voiture（0000RMB)',
+                             'Prix original（0000RMB)',
+                             'Voyage de conduite（0000KM)',
+                             'Date d’expiration des assurances',
+                             'Date d’avoir la plaque d’immatriculation',
+                             'Déplacement de voiture',
+                             'Puissance',
+                             'Taille de voiture',
+                             'Couleur',
+                             'Numéro de carburant',
+                             'Emplacement de voiture',
+                             'Écart des prix',
+                             'Prix/Prix original',
+                             'Détails de voiture',
+                             'Niveau'], index=False,encoding='utf-8',sheet_name='Sheet1')
+writer.save()
+
+
+
+
+##Part 2
+import xlsxwriter    # Package pour écrire des fichiers dans Excel
+import os
+import sys
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from pylab import *
+
+# Résoudre le problème d'affichage du texte chinois dans le dessin
+mpl.rcParams['font.sans-serif'] = ['SimHei']
+
+# Montrer l'emplacement de la voiture
+d3['Emplacement de voiture'].value_counts()
+
+# Modifier la valeur de la série
+# Classer la minorité dans les autres
+cols = ['汕尾','阳江','湛江','云浮','韶关','肇庆','潮州','清远','梅州','茂名','河源','珠海']
+for i in cols:
+    d3['Emplacement de voiture'] = d3['Emplacement de voiture'].replace(i,'Other') # 修改series值
+d3['Emplacement de voiture'].value_counts()
+
+# Traduire des mots chinois en français (pour un meilleur affichage)
+d4 = d3.replace('东莞', 'DongGuan').replace('深圳', 'ShenZhen').replace('广州', 'GuangZhou').replace('佛山', 'FoShan').replace('惠州', 'HuiZhou').replace('汕头', 'ShanTou').replace('江门', 'JiangMen').replace('中山','ZhongShan').replace('揭阳', 'JieYang')
+d4['Emplacement de voiture'].value_counts()
+
+# Visualisation python
+# Histogramme du nombre d'emplacements de voiture
+fig , ax = plt.subplots(1,1, figsize=(16, 8))  
+ax.set_title("Emplacement de voiture", fontsize=25, color = 'red')  # Titre
+ax.hist(d4['Emplacement de voiture'],bins = 22)   # Histogramme
+# L'axe X et de l'axe Y
+plt.ylabel("Nombre de voitures", fontsize=20, color = 'blue') 
+plt.xlabel("Emplacement de voiture", fontsize=20, color = 'blue') 
+plt.ylim(0,6000)     
+plt.tick_params(labelsize=15)   
+ax.yaxis.set_major_locator(MultipleLocator(200)) 
+plt.show()
+
+# Taille de voiture
+# Modifier la valeur de la série
+# Classer la minorité dans les autres
+col1 = ['微面','微型车','轻客','大型SUV','皮卡','微卡',]
+for i in col1:
+    d4['Taille de voiture'] = d4['Taille de voiture'].replace(i,'Other') 
+col2 = ['紧凑型SUV','中型SUV','小型SUV','中大型SUV',]
+for i in col2:
+    d4['Taille de voiture'] = d4['Taille de voiture'].replace(i,'SUV')
+col3 = ['中型车','中大型车',]
+for i in col3:
+    d4['Taille de voiture'] = d4['Taille de voiture'].replace(i,'中型车')
+d4['Taille de voiture'].value_counts()
+
+#Traduire des mots chinois en français (pour un meilleur affichage)
+d4 = d4.replace('紧凑型车', 'Voiture compacte').replace('中型车', 'Voiture de taille moyenne').replace('小型车', 'Voiture petite').replace('大型车','Voiture grande').replace('跑车', 'Voiture de sport')
+d4['Taille de voiture'].value_counts()
+
+# Visualisation python
+# Histogramme du nombre d'emplacements de voiture
+fig , ax = plt.subplots(1,1, figsize=(16, 8))
+ax.set_title("Taille de voiture", fontsize=25, color = 'red')   # Titre
+ax.hist(d4['Taille de voiture'],bins = 24)           # Histogramme
+plt.ylabel("Nombre de voitures", fontsize=20, color = 'blue') # L'axe X et de l'axe Y
+plt.xlabel("Taille de voiture", fontsize=20, color = 'blue') 
+plt.ylim(0,6000)  # Limites supérieure et inférieure de l'axe Y  
+plt.tick_params(labelsize=15)  # La taille de la police d'échelle
+ax.yaxis.set_major_locator(MultipleLocator(1000))  # La différence de la valeur d'échelle de l'axe y
+plt.show()
+
+#Tableau encadré du prix de vente et de la taille de voiture
+import seaborn as sns
+import matplotlib.pyplot as plt
+plt.figure(figsize=(16, 8))
+plt.title('Tableau encadré du prix de vente et de la taille de voiture', fontsize = 25 ,c = 'green') # Nom, taille, couleur du tableau encadré
+plt.ylabel("", fontsize=20, color = 'blue')      # Nom de l'axe X et de l'axe Y (vide)
+plt.xlabel("", fontsize=20, color = 'blue') 
+plt.tick_params(labelsize=16)   # La taille de la police d'échelle
+sns.boxplot(y = d4['Prix/Prix original'], x = d4['Taille de voiture'])
+plt.show()
+
+#Tableau encadré du prix de vente et emplacement de voiture
+plt.figure( figsize=(16, 8))
+plt.title('Tableau encadré du prix de vente et emplacement de voiture', fontsize = 25 ,c = 'green') 
+plt.ylabel("", fontsize=20, color = 'blue')     # L'axe X et de l'axe Y (vide)
+plt.xlabel("", fontsize=20, color = 'blue') 
+plt.tick_params(labelsize=16)  # La taille de la police d'échelle
+sns.boxplot(y = d4['Prix/Prix original'], x = d4['Emplacement de voiture'])
+plt.show()
+
+# Couleur de voiture
+# Modifier la valeur de la série
+# Classer la minorité dans les autres
+color = ['紫色','绿色','橙色','黄色','棕色','香槟色']
+for i in color:
+    d4['Couleur'] = d4['Couleur'].replace(i,'其他')  
+
+color2 = ['银灰色','深灰色']
+for i in color2:
+    d4['Couleur'] = d4['Couleur'].replace(i,'灰色') 
+d4['Couleur'].value_counts()
+
+#Traduire des mots chinois en français (pour un meilleur affichage)
+d4 = d4.replace('白色', 'Blanc').replace('黑色', 'Noir').replace('其他', 'Autre').replace('灰色','Gris').replace('红色', 'Rouge').replace('蓝色','Bleu')
+d4['Couleur'].value_counts()
+
+colors = d4['Couleur'].value_counts()
+cols_colors = list(colors.keys())
+#Enregistrer la couleur dans une liste
+value_colors = list(colors)
+value_colors
+explode = ()
+
+# Diagramme circulaire
+plt.cla()
+plt.pie(value_colors,labels = cols_colors,autopct = '%1.1f%%',shadow = True, startangle = 90)   
+plt.axis('equal')
+plt.show()
+
+```
+
