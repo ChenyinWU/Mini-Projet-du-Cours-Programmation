@@ -1,2 +1,3 @@
 # Mini Projet du Cours Programmation
- Yuchen et Chenyin, nous avons réalisé un mini projet de codage ensemble.
+ Yuchen and Chenyin, as two Python beginner, we've realized this mini programming project together. 
+ Generaly, we 
