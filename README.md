@@ -4,4 +4,4 @@
  As the sample data base for this programming exercise, we used an Excel database about the second-hand car transactions in Guangdong Province, China.
  Firstly, we've practiced how to read data, display data and then cleanup the data.
  After of that, we tried to do the data pretreatment, data extraction, data screening, data summary and data statistics.
- And this is our output.
+ And here is our output.
